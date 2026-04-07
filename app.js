@@ -5,7 +5,7 @@
 
 const CONFIG = {
   // URL del webhook de n8n (reemplaza con tu URL real)
-  N8N_WEBHOOK_URL: 'https://TU_N8N.com/webhook/fuerza-generator',
+  N8N_WEBHOOK_URL: 'https://n8n.openip.cl/webhook/fuerza-generator',
   // Máximo tamaño de archivo en bytes (10MB)
   MAX_FILE_SIZE: 10 * 1024 * 1024,
 };
