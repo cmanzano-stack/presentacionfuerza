@@ -313,9 +313,44 @@ async function generatePresentation() {
     const plan = result.plan; 
     setGenStep(3, 'done');
 
-    // Paso 4: Construir PPTX localmente (Solución al bloqueo de JSZip)
+    // Paso 4: Construir PPTX localmente
     setGenStep(4, 'active');
-    document.getElementById('gen-status').textContent = 'Ensamblando presentación en tu navegador…';
+    document.getElementById('gen-status').textContent = 'Generando archivo PowerPoint…';
+
+    const zip = new JSZip();
+    const esc = s => String(s || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+
+    // 1. Estructura de archivos obligatorios para PowerPoint
+    zip.file('[Content_Types].xml', `<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types"><Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/><Default Extension="xml" ContentType="application/xml"/><Override PartName="/ppt/presentation.xml" ContentType="application/vnd.openxmlformats-officedocument.presentationml.presentation.main+xml"/><Override PartName="/ppt/slides/slide1.xml" ContentType="application/vnd.openxmlformats-officedocument.presentationml.slide+xml"/></Types>`);
+    
+    zip.file('_rels/.rels', `<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/officeDocument" Target="ppt/presentation.xml"/></Relationships>`);
+
+    zip.file('ppt/presentation.xml', `<?xml version="1.0" encoding="UTF-8" standalone="yes"?><p:presentation xmlns:a="http://schemas.openxmlformats.org/drawingml/2006/main" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships" xmlns:p="http://schemas.openxmlformats.org/presentationml/2006/main"><p:sldIdLst><p:sldId id="256" r:id="rId1"/></p:sldIdLst><p:sldSz cx="12192000" cy="6858000"/><p:notesSz cx="6858000" cy="9144000"/></p:presentation>`);
+
+    zip.file('ppt/_rels/presentation.xml.rels', `<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/slide" Target="slides/slide1.xml"/></Relationships>`);
+
+    // 2. Creación de la Slide (Usando los datos de Gemini)
+    const slide1Content = `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+    <p:sld xmlns:a="http://schemas.openxmlformats.org/drawingml/2006/main" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships" xmlns:p="http://schemas.openxmlformats.org/presentationml/2006/main">
+      <p:cSld>
+        <p:spTree>
+          <p:nvGrpSpPr><p:cNvPr id="1" name=""/><p:cNvGrpSpPr/><p:nvPr/></p:nvGrpSpPr>
+          <p:grpSpPr><a:xfrm><a:off x="0" y="0"/><a:ext cx="0" cy="0"/><a:chOff x="0" y="0"/><a:chExt cx="0" cy="0"/></a:xfrm></p:grpSpPr>
+          <p:sp>
+            <p:nvSpPr><p:cNvPr id="2" name="Título"/></p:nvSpPr>
+            <p:spPr><a:xfrm><a:off x="711200" y="457200"/><a:ext cx="10769600" cy="1143000"/></a:xfrm></p:spPr>
+            <p:txBody><a:bodyPr/><a:lstStyle/><a:p><a:r><a:rPr sz="4400" b="1"><a:solidFill><a:srgbClr val="FA345E"/></a:solidFill></a:rPr><a:t>${esc(plan.cover_subtitle)}</a:t></a:r></a:p></p:txBody>
+          </p:sp>
+        </p:spTree>
+      </p:cSld>
+    </p:sld>`;
+
+    zip.file('ppt/slides/slide1.xml', slide1Content);
+
+    // 3. Generación final
+    const blob = await zip.generateAsync({type: "blob", mimeType: "application/vnd.openxmlformats-officedocument.presentationml.presentation"});
+    const url = URL.createObjectURL(blob);
+    const filename = `Fuerza_Plan_${payload.company.name.replace(/\s+/g,'_')}.pptx`;
 
     // Inicializamos JSZip (debe estar cargado en el HTML)
     const zip = new JSZip();
