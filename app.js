@@ -321,6 +321,7 @@ async function generatePresentation() {
     document.getElementById('gen-status').textContent = 'Construyendo el PPTX…';
 
     const result = await response.json();
+    console.log('🔍 N8N RESPONSE:', JSON.stringify(result).substring(0, 300));
     setGenStep(4, 'done');
 
     setGenStep(5, 'active');
