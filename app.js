@@ -237,7 +237,7 @@ function buildSummary() {
 
   // Empresa
   const empCard = document.getElementById('summary-empresa');
-  empCard.innerHTML = '<h4>Empresa</h4>' + rows([
+  empCard.innerHTML = '<div class="card-title">Empresa</div>' + rows([
     ['Empresa', get('company-name')],
     ['Industria', getText('#industry', get('industry'))],
     ['Equipo', getText('#team-size', get('team-size'))],
@@ -248,19 +248,19 @@ function buildSummary() {
 
   // Desafío
   const desCard = document.getElementById('summary-desafio');
-  desCard.innerHTML = '<h4>Desafío</h4>' + rows([
+  desCard.innerHTML = '<div class="card-title">Desafío</div>' + rows([
     ['Dolor principal', get('pain-main')],
     ['Intentos previos', get('pain-tried') || '—'],
     ['Cambio esperado', get('change-goal')],
-    ['Métrica de éxito (D90)', get('success-metric') || '—'],
+    ['Métrica de éxito', get('success-metric') || '—'],
     ['Madurez digital', MATURITY_LABELS[get('digital-maturity')]],
   ]);
 
   // Módulos
-  const mods = [...document.querySelectorAll('.check-grid input:checked')].map(el => el.closest('label').querySelector('.check-label-text').childNodes[0].textContent.trim());
+  const mods = [...document.querySelectorAll('.check-grid input:checked')].map(el => el.closest('label').querySelector('.check-text').childNodes[0].textContent.trim());
   const files = state.uploadedFiles.map(f => f.name).join(', ') || 'Ninguno';
   const modCard = document.getElementById('summary-modulos');
-  modCard.innerHTML = '<h4>Módulos y archivos</h4>' + rows([
+  modCard.innerHTML = '<div class="card-title">Módulos y archivos</div>' + rows([
     ['Módulos seleccionados', mods.length ? mods.join(', ') : 'Todos (no especificados)'],
     ['Archivos adjuntos', files],
     ['Contexto adicional', get('extra-context') || '—'],
