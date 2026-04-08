@@ -257,7 +257,7 @@ function buildSummary() {
   ]);
 
   // Módulos
-  const mods = [...document.querySelectorAll('.check-grid input:checked')].map(el => el.closest('label').querySelector('.check-text').childNodes[0].textContent.trim());
+  const mods = [...document.querySelectorAll('.check-grid input:checked')].map(el => el.nextElementSibling.querySelector('.check-text').childNodes[0].textContent.trim());
   const files = state.uploadedFiles.map(f => f.name).join(', ') || 'Ninguno';
   const modCard = document.getElementById('summary-modulos');
   modCard.innerHTML = '<div class="card-title">Módulos y archivos</div>' + rows([
