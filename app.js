@@ -1,12 +1,9 @@
 // ============================================================
 // FUERZA GENERATOR — app.js
-// Configura estas variables antes de desplegar:
 // ============================================================
 
 const CONFIG = {
-  // URL del webhook de n8n (reemplaza con tu URL real)
   N8N_WEBHOOK_URL: 'https://n8n.openip.cl/webhook/fuerza-generator',
-  // Máximo tamaño de archivo en bytes (10MB)
   MAX_FILE_SIZE: 10 * 1024 * 1024,
 };
 
@@ -18,6 +15,7 @@ const state = {
   currentStep: 1,
   uploadedFiles: [],
   presentationUrl: null,
+  exportUrl: null,
 };
 
 const MATURITY_LABELS = {
@@ -33,7 +31,7 @@ const MATURITY_LABELS = {
 // ============================================================
 
 function goToStep(step) {
-  if (step > state.currentStep) return; // can only go back
+  if (step > state.currentStep) return;
   showStep(step);
 }
 
@@ -51,7 +49,6 @@ function showStep(step) {
   document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
   document.getElementById('section-' + step).classList.add('active');
 
-  // Update step indicators
   for (let i = 1; i <= 4; i++) {
     const ind = document.getElementById('step-ind-' + i);
     ind.classList.remove('active', 'done');
@@ -174,7 +171,6 @@ function buildSummary() {
   const get = id => document.getElementById(id).value;
   const getText = (sel, val) => { const o = document.querySelector(`${sel} option[value="${val}"]`); return o ? o.textContent : val; };
 
-  // Empresa
   const empCard = document.getElementById('summary-empresa');
   empCard.innerHTML = '<div class="card-title">Empresa</div>' + rows([
     ['Nombre', get('company-name')],
@@ -185,7 +181,6 @@ function buildSummary() {
     ['Inicio estimado', getText('#start-date', get('start-date') || 'inmediato')],
   ]);
 
-  // Desafío
   const desCard = document.getElementById('summary-desafio');
   desCard.innerHTML = '<div class="card-title">Desafío</div>' + rows([
     ['Dolor principal', get('pain-main')],
@@ -195,7 +190,6 @@ function buildSummary() {
     ['Madurez digital', MATURITY_LABELS[get('digital-maturity')]],
   ]);
 
-  // Módulos — null-safe
   const mods = [...document.querySelectorAll('.check-grid input:checked')].map(el => {
     const label = el.closest('.check-item')?.querySelector('label');
     const span = label?.querySelector('.check-text');
@@ -244,8 +238,6 @@ async function generatePresentation() {
 
     // Step 3: Call n8n webhook
     setGenStep(3, 'active');
-    document.getElementById('gen-status').textContent = 'Gemini está generando el contenido…';
-
     const response = await fetch(CONFIG.N8N_WEBHOOK_URL, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -255,24 +247,19 @@ async function generatePresentation() {
     if (!response.ok) throw new Error(`Error del servidor: ${response.status}`);
     setGenStep(3, 'done');
 
-    // Step 4: Create Google Slides
+    // Step 4: Crear presentación
     setGenStep(4, 'active');
-    document.getElementById('gen-status').textContent = 'Creando presentación en Google Slides…';
-
     const result = await response.json();
-    console.log('🔍 N8N RESPONSE:', JSON.stringify(result).substring(0, 300));
+    console.log('N8N RESPONSE:', JSON.stringify(result).substring(0, 300));
     setGenStep(4, 'done');
 
+    // Step 5: Finalizar
     setGenStep(5, 'active');
-
-    // Get Google Slides URL
-    let slideUrl = null;
-    if (result.presentationUrl) {
-      slideUrl = result.presentationUrl;
-    }
-
+    const slideUrl = result.presentationUrl || null;
+    const exportUrl = result.exportUrl || (slideUrl ? slideUrl.replace('/edit', '/export/pptx') : null);
     setGenStep(5, 'done');
-    setTimeout(() => showSuccess(slideUrl, payload.company.name), 600);
+
+    setTimeout(() => showSuccess(slideUrl, exportUrl, payload.company.name), 600);
 
   } catch (err) {
     console.error(err);
@@ -307,7 +294,7 @@ function buildPayload(filesData) {
     files: filesData,
     meta: {
       generated_at: new Date().toISOString(),
-      generator_version: '2.0',
+      generator_version: '3.0',
     },
   };
 }
@@ -340,7 +327,6 @@ function fileToBase64(file) {
 // ============================================================
 
 function showOverlay() {
-  // Reset steps
   for (let i = 1; i <= 5; i++) document.getElementById('gstep-' + i).className = 'gen-step';
   document.getElementById('gen-status').textContent = 'Iniciando proceso…';
   document.getElementById('generating-overlay').classList.add('visible');
@@ -357,8 +343,8 @@ function setGenStep(n, status) {
     const labels = {
       1: 'Preparando archivos adjuntos…',
       2: 'Recopilando datos del formulario…',
-      3: 'Gemini generando contenido personalizado…',
-      4: 'Creando Google Slides…',
+      3: 'Generando contenido personalizado con IA…',
+      4: 'Creando presentación en Google Slides…',
       5: 'Finalizando…',
     };
     document.getElementById('gen-status').textContent = labels[n] || '';
@@ -369,10 +355,9 @@ function setGenStep(n, status) {
 // SUCCESS
 // ============================================================
 
-function showSuccess(slideUrl, companyName) {
+function showSuccess(slideUrl, exportUrl, companyName) {
   hideOverlay();
 
-  // Hide all sections
   document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
   for (let i = 1; i <= 4; i++) {
     const ind = document.getElementById('step-ind-' + i);
@@ -381,16 +366,30 @@ function showSuccess(slideUrl, companyName) {
   }
 
   state.presentationUrl = slideUrl;
+  state.exportUrl = exportUrl;
   document.getElementById('success-company').textContent = companyName;
 
-  const dl = document.getElementById('btn-download');
+  // Botón Ver en Google Slides
+  const btnSlides = document.getElementById('btn-download');
   if (slideUrl) {
-    dl.href = slideUrl;
-    dl.target = '_blank';
-    dl.textContent = 'Ver en Google Slides';
-    dl.style.display = 'inline-flex';
+    btnSlides.href = slideUrl;
+    btnSlides.target = '_blank';
+    btnSlides.textContent = 'Ver en Google Slides';
+    btnSlides.style.display = 'inline-flex';
   } else {
-    dl.style.display = 'none';
+    btnSlides.style.display = 'none';
+  }
+
+  // Botón Descargar PPTX
+  const btnPptx = document.getElementById('btn-download-pptx');
+  if (btnPptx) {
+    if (exportUrl) {
+      btnPptx.href = exportUrl;
+      btnPptx.target = '_blank';
+      btnPptx.style.display = 'inline-flex';
+    } else {
+      btnPptx.style.display = 'none';
+    }
   }
 
   document.getElementById('success-state').classList.add('visible');
@@ -398,7 +397,6 @@ function showSuccess(slideUrl, companyName) {
 }
 
 function resetForm() {
-  // Reset form state
   document.getElementById('success-state').classList.remove('visible');
   document.querySelectorAll('input[type="text"], textarea').forEach(el => el.value = '');
   document.querySelectorAll('select').forEach(el => el.selectedIndex = 0);
@@ -406,6 +404,7 @@ function resetForm() {
   document.getElementById('files-list').innerHTML = '';
   state.uploadedFiles = [];
   state.presentationUrl = null;
+  state.exportUrl = null;
   document.getElementById('btn-generate').disabled = false;
   document.getElementById('maturity-label').textContent = MATURITY_LABELS[3];
   document.getElementById('digital-maturity').value = 3;
