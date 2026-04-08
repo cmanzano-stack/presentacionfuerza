@@ -93,21 +93,6 @@
   .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
   @media (max-width: 480px) { .grid-2 { grid-template-columns: 1fr; } }
 
-  /* COMPANY SEARCH */
-  .search-row { position: relative; }
-  .search-row input { padding-right: 44px; }
-  .btn-search { position: absolute; right: 8px; top: 50%; transform: translateY(-50%); background: var(--red); border: none; border-radius: 6px; width: 28px; height: 28px; cursor: pointer; display: flex; align-items: center; justify-content: center; transition: opacity 0.2s; }
-  .btn-search:hover { opacity: 0.85; }
-  .btn-search svg { width: 13px; height: 13px; stroke: white; fill: none; stroke-width: 2.2; stroke-linecap: round; }
-  .search-loading { display: none; align-items: center; gap: 7px; margin-top: 7px; font-size: 11px; color: var(--text-muted); font-weight: 500; }
-  .search-loading.visible { display: flex; }
-  .spinner { width: 12px; height: 12px; border: 1.5px solid #ddd; border-top-color: var(--red); border-radius: 50%; animation: spin 0.7s linear infinite; flex-shrink: 0; }
-  @keyframes spin { to { transform: rotate(360deg); } }
-  .company-card { display: none; margin-top: 8px; background: var(--red-light); border: 1px solid #fcc; border-left: 3px solid var(--red); border-radius: var(--radius-sm); padding: 10px 13px; font-size: 12px; line-height: 1.55; }
-  .company-card.visible { display: block; animation: fadeIn 0.2s ease; }
-  .company-card-name { font-weight: 700; color: var(--text); font-size: 13px; margin-bottom: 2px; }
-  .company-card-desc { color: var(--text-muted); }
-
   /* CHECKBOXES */
   .check-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
   @media (max-width: 480px) { .check-grid { grid-template-columns: 1fr; } }
@@ -234,23 +219,13 @@
     <div class="section-header">
       <div class="section-tag">Paso 1 de 4</div>
       <div class="section-title">Información de la empresa</div>
-      <div class="section-desc">Ingresa el nombre del cliente y buscaremos información pública para contextualizar el plan.</div>
+      <div class="section-desc">Ingresa el nombre del cliente. El plan se personalizará automáticamente.</div>
     </div>
     <div class="card">
       <div class="card-title">Datos del cliente</div>
       <div class="field-group">
         <label>Nombre de la empresa <span class="req">*</span></label>
-        <div class="search-row">
-          <input type="text" id="company-name" placeholder="Ej: Mercado Pago, Falabella, CMPC…" autocomplete="off">
-          <button class="btn-search" onclick="searchCompany()" title="Buscar">
-            <svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
-          </button>
-        </div>
-        <div class="search-loading" id="searching-ind"><div class="spinner"></div><span>Buscando información…</span></div>
-        <div class="company-card" id="company-info-card">
-          <div class="company-card-name" id="ci-name"></div>
-          <div class="company-card-desc" id="ci-desc"></div>
-        </div>
+        <input type="text" id="company-name" placeholder="Ej: Mercado Pago, Falabella, CMPC…" autocomplete="off">
         <div class="field-error" id="err-company">Este campo es requerido.</div>
       </div>
       <div class="grid-2">
@@ -450,9 +425,9 @@
     <div class="success-icon"><svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg></div>
     <div class="success-title">¡Presentación lista!</div>
     <div class="success-desc">El plan de implementación para <strong id="success-company"></strong> fue generado exitosamente.</div>
-    <a class="btn-download" id="btn-download" href="#" download>
+    <a class="btn-download" id="btn-download" href="#" target="_blank">
       <svg viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
-      Descargar .pptx
+      Ver en Google Slides
     </a>
     <span class="or-divider">o</span>
     <button class="btn-reset" onclick="resetForm()">Generar otra presentación</button>
@@ -460,7 +435,7 @@
 
 </div>
 
-<div class="footer">Apprecio · Fuerza &nbsp;·&nbsp; Generador automático de planes de implementación &nbsp;·&nbsp; cmanzano@apprecio.com</div>
+<div class="footer">Apprecio · Fuerza &nbsp;·&nbsp; Generador automático de planes de implementación &nbsp;·&nbsp; <a href="mailto:soporte@apprecio.com">soporte@apprecio.com</a></div>
 
 <!-- OVERLAY -->
 <div class="overlay" id="generating-overlay">
@@ -469,14 +444,15 @@
   <div class="gen-title">Generando tu plan…</div>
   <div class="gen-status" id="gen-status">Iniciando proceso</div>
   <div class="gen-steps">
-    <div class="gen-step" id="gstep-1"><div class="gen-step-dot"></div><span>Buscando información de la empresa</span></div>
-    <div class="gen-step" id="gstep-2"><div class="gen-step-dot"></div><span>Procesando archivos adjuntos</span></div>
+    <div class="gen-step" id="gstep-1"><div class="gen-step-dot"></div><span>Preparando archivos adjuntos</span></div>
+    <div class="gen-step" id="gstep-2"><div class="gen-step-dot"></div><span>Recopilando datos del formulario</span></div>
     <div class="gen-step" id="gstep-3"><div class="gen-step-dot"></div><span>Generando contenido del plan con IA</span></div>
-    <div class="gen-step" id="gstep-4"><div class="gen-step-dot"></div><span>Construyendo presentación PPTX</span></div>
-    <div class="gen-step" id="gstep-5"><div class="gen-step-dot"></div><span>Preparando descarga</span></div>
+    <div class="gen-step" id="gstep-4"><div class="gen-step-dot"></div><span>Creando Google Slides</span></div>
+    <div class="gen-step" id="gstep-5"><div class="gen-step-dot"></div><span>Finalizando…</span></div>
   </div>
 </div>
 
 <script src="app.js"></script>
+
 </body>
 </html>
