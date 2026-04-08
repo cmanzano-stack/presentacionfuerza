@@ -288,8 +288,15 @@ async function generatePresentation() {
     
     // Obtenemos el JSON estructurado desde n8n
     const result = await response.json();
-    const plan = result.plan || { cover_subtitle: "Plan de Implementación Fuerza" }; 
-    setGenStep(3, 'done');
+    console.log("Datos recibidos de n8n:", result); // Para depurar
+
+    // FIX ROBUSTO: Buscamos el plan donde sea que esté
+    const plan = result.plan || result; 
+    
+    // Garantizamos que cover_subtitle exista para que no explote la Slide 1
+    if (!plan.cover_subtitle) {
+      plan.cover_subtitle = `Plan de Implementación para ${companyName}`;
+    }
 
     // Paso 4: Construir PPTX localmente (OOXML Completo)
     setGenStep(4, 'active');
@@ -346,23 +353,23 @@ async function generatePresentation() {
       <p:nvGrpSpPr><p:cNvPr id="1" name=""/><p:cNvGrpSpPr/><p:nvPr/></p:nvGrpSpPr>
       <p:grpSpPr><a:xfrm><a:off x="0" y="0"/><a:ext cx="0" cy="0"/><a:chOff x="0" y="0"/><a:chExt cx="0" cy="0"/></a:xfrm></p:grpSpPr>
       
-      <p:sp>
-        <p:nvSpPr><p:cNvPr id="2" name="Título Portada"/></p:nvSpPr>
-        <p:spPr>
-          <a:xfrm><a:off x="0" y="0"/><a:ext cx="12192000" cy="2000000"/></a:xfrm>
-          <a:prstGeom prst="rect"><a:avLst/></a:prstGeom>
-          <a:solidFill><a:srgbClr val="FA345E"/></a:solidFill> </p:spPr>
-        <p:txBody>
-          <a:bodyPr anchor="ctr"/><a:lstStyle/>
-          <a:p>
-            <a:pPr algn="ctr"/>
-            <a:r>
-              <a:rPr sz="4400" b="1"><a:solidFill><a:srgbClr val="FFFFFF"/></a:solidFill></a:rPr>
-              <a:t>${esc(plan.cover_subtitle || `Plan para ${payload.company.name}`)}</a:t>
-            </a:r>
-          </a:p>
-        </p:txBody>
-      </p:sp>
+<p:sp>
+  <p:nvSpPr><p:cNvPr id="2" name="Título Portada"/></p:nvSpPr>
+  <p:spPr>
+    <a:xfrm><a:off x="0" y="0"/><a:ext cx="12192000" cy="2000000"/></a:xfrm>
+    <a:prstGeom prst="rect"><a:avLst/></a:prstGeom> <a:solidFill><a:srgbClr val="FA345E"/></a:solidFill>
+  </p:spPr>
+  <p:txBody>
+    <a:bodyPr anchor="ctr"/><a:lstStyle/>
+    <a:p>
+      <a:pPr algn="ctr"/>
+      <a:r>
+        <a:rPr sz="4400" b="1"><a:solidFill><a:srgbClr val="FFFFFF"/></a:solidFill></a:rPr>
+        <a:t>${esc(plan.cover_subtitle)}</a:t>
+      </a:r>
+    </a:p>
+  </p:txBody>
+</p:sp>
 
       <p:sp>
         <p:nvSpPr><p:cNvPr id="3" name="Subtítulo"/></p:nvSpPr>
