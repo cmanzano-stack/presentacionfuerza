@@ -288,7 +288,7 @@ async function generatePresentation() {
     
     // Obtenemos el JSON estructurado desde n8n
     const result = await response.json();
-    const plan = result.plan; 
+    const plan = result.plan || { cover_subtitle: "Plan de Implementación Fuerza" }; 
     setGenStep(3, 'done');
 
     // Paso 4: Construir PPTX localmente (OOXML Completo)
