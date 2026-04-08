@@ -154,6 +154,7 @@
   .overlay.visible { display: flex; }
   .overlay-logo { height: 28px; margin-bottom: 28px; opacity: 0.5; }
   .gen-spinner { width: 56px; height: 56px; border-radius: 50%; border: 3px solid var(--red-light); border-top-color: var(--red); animation: spin 0.9s linear infinite; margin-bottom: 24px; }
+  @keyframes spin { to { transform: rotate(360deg); } }
   .gen-title { font-size: 20px; font-weight: 700; color: var(--text); margin-bottom: 7px; }
   .gen-status { font-size: 12px; color: var(--text-muted); margin-bottom: 28px; font-weight: 500; }
   .gen-steps { display: flex; flex-direction: column; gap: 9px; width: 100%; max-width: 300px; }
@@ -174,9 +175,13 @@
   .btn-download { display: inline-flex; align-items: center; gap: 8px; background: var(--red); color: white; font-family: 'Montserrat', sans-serif; font-size: 13px; font-weight: 700; padding: 12px 26px; border-radius: var(--radius-sm); text-decoration: none; transition: opacity 0.2s; border: none; cursor: pointer; box-shadow: 0 4px 14px rgba(250,52,94,0.28); }
   .btn-download:hover { opacity: 0.88; }
   .btn-download svg { width: 15px; height: 15px; stroke: white; fill: none; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
-  .btn-reset { display: inline-flex; align-items: center; background: none; border: 1.5px solid #ddd; color: var(--text-muted); font-family: 'Montserrat', sans-serif; font-size: 12px; font-weight: 600; padding: 10px 18px; border-radius: var(--radius-sm); cursor: pointer; margin-top: 10px; transition: all 0.2s; }
+  .btn-download-pptx { display: inline-flex; align-items: center; gap: 8px; background: var(--white); color: var(--text); font-family: 'Montserrat', sans-serif; font-size: 13px; font-weight: 700; padding: 12px 26px; border-radius: var(--radius-sm); text-decoration: none; transition: all 0.2s; border: 1.5px solid #ddd; cursor: pointer; }
+  .btn-download-pptx:hover { border-color: var(--red); color: var(--red); }
+  .btn-download-pptx svg { width: 15px; height: 15px; stroke: currentColor; fill: none; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+  .success-actions { display: flex; flex-direction: column; align-items: center; gap: 10px; }
+  .btn-reset { display: inline-flex; align-items: center; background: none; border: 1.5px solid #ddd; color: var(--text-muted); font-family: 'Montserrat', sans-serif; font-size: 12px; font-weight: 600; padding: 10px 18px; border-radius: var(--radius-sm); cursor: pointer; margin-top: 4px; transition: all 0.2s; }
   .btn-reset:hover { border-color: var(--red); color: var(--red); }
-  .or-divider { display: block; margin: 12px auto; font-size: 11px; color: var(--text-dim); }
+  .or-divider { display: block; margin: 4px auto; font-size: 11px; color: var(--text-dim); }
 
   /* FOOTER */
   .footer { text-align: center; padding: 20px; font-size: 11px; color: var(--text-dim); border-top: 1px solid var(--border); margin-top: 32px; }
@@ -424,18 +429,24 @@
   <div class="success-state" id="success-state">
     <div class="success-icon"><svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg></div>
     <div class="success-title">¡Presentación lista!</div>
-    <div class="success-desc">El plan de implementación para <strong id="success-company"></strong> fue generado exitosamente.</div>
-    <a class="btn-download" id="btn-download" href="#" target="_blank">
-      <svg viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
-      Ver en Google Slides
-    </a>
-    <span class="or-divider">o</span>
-    <button class="btn-reset" onclick="resetForm()">Generar otra presentación</button>
+    <div class="success-desc">El plan de implementación para <strong id="success-company"></strong> fue generado exitosamente y enviado a tu correo.</div>
+    <div class="success-actions">
+      <a class="btn-download" id="btn-download" href="#" target="_blank">
+        <svg viewBox="0 0 24 24"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
+        Ver en Google Slides
+      </a>
+      <a class="btn-download-pptx" id="btn-download-pptx" href="#" target="_blank" style="display:none;">
+        <svg viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+        Descargar PPTX
+      </a>
+      <span class="or-divider">o</span>
+      <button class="btn-reset" onclick="resetForm()">Generar otra presentación</button>
+    </div>
   </div>
 
 </div>
 
-<div class="footer">Apprecio · Fuerza &nbsp;·&nbsp; Generador automático de planes de implementación &nbsp;·&nbsp; <a href="mailto:soporte@apprecio.com">soporte@apprecio.com</a></div>
+<div class="footer">Apprecio · Fuerza &nbsp;·&nbsp; Generador automático de planes de implementación &nbsp;·&nbsp; cmanzano@apprecio.com</div>
 
 <!-- OVERLAY -->
 <div class="overlay" id="generating-overlay">
@@ -447,12 +458,11 @@
     <div class="gen-step" id="gstep-1"><div class="gen-step-dot"></div><span>Preparando archivos adjuntos</span></div>
     <div class="gen-step" id="gstep-2"><div class="gen-step-dot"></div><span>Recopilando datos del formulario</span></div>
     <div class="gen-step" id="gstep-3"><div class="gen-step-dot"></div><span>Generando contenido del plan con IA</span></div>
-    <div class="gen-step" id="gstep-4"><div class="gen-step-dot"></div><span>Creando Google Slides</span></div>
-    <div class="gen-step" id="gstep-5"><div class="gen-step-dot"></div><span>Finalizando…</span></div>
+    <div class="gen-step" id="gstep-4"><div class="gen-step-dot"></div><span>Creando presentación en Google Slides</span></div>
+    <div class="gen-step" id="gstep-5"><div class="gen-step-dot"></div><span>Finalizando y enviando por correo</span></div>
   </div>
 </div>
 
 <script src="app.js"></script>
-
 </body>
 </html>
