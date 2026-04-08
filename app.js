@@ -16,9 +16,8 @@ const CONFIG = {
 
 const state = {
   currentStep: 1,
-  companyInfo: null,
   uploadedFiles: [],
-  generatedFileUrl: null,
+  presentationUrl: null,
 };
 
 const MATURITY_LABELS = {
@@ -106,66 +105,6 @@ function requireSelect(id, errId) {
 }
 
 // ============================================================
-// COMPANY SEARCH (via n8n or direct)
-// ============================================================
-
-async function searchCompany() {
-  const name = document.getElementById('company-name').value.trim();
-  if (!name) {
-    document.getElementById('company-name').classList.add('error');
-    return;
-  }
-
-  const indicator = document.getElementById('searching-ind');
-  const card = document.getElementById('company-info-card');
-  card.classList.remove('visible');
-  indicator.classList.add('visible');
-
-  try {
-    // Call n8n webhook endpoint for company lookup
-    const res = await fetch('https://n8n.openip.cl/webhook/fuerza-company-lookup', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ company_name: name }),
-    });
-
-    if (res.ok) {
-      const data = await res.json();
-      state.companyInfo = data;
-      document.getElementById('ci-name').textContent = data.name || name;
-      document.getElementById('ci-desc').textContent = data.summary || 'Información encontrada.';
-
-      // Auto-fill industry if detected
-      if (data.industry_code) {
-        const sel = document.getElementById('industry');
-        if (sel.querySelector(`option[value="${data.industry_code}"]`)) {
-          sel.value = data.industry_code;
-        }
-      }
-      card.classList.add('visible');
-    } else {
-      // Fallback: just store the name
-      state.companyInfo = { name };
-      document.getElementById('ci-name').textContent = name;
-      document.getElementById('ci-desc').textContent = 'No se encontró información adicional. El plan se generará con los datos del formulario.';
-      card.classList.add('visible');
-    }
-  } catch (e) {
-    state.companyInfo = { name };
-    document.getElementById('ci-name').textContent = name;
-    document.getElementById('ci-desc').textContent = 'Búsqueda no disponible. El plan se generará con los datos del formulario.';
-    card.classList.add('visible');
-  } finally {
-    indicator.classList.remove('visible');
-  }
-}
-
-// Search on Enter
-document.getElementById('company-name').addEventListener('keydown', e => {
-  if (e.key === 'Enter') { e.preventDefault(); searchCompany(); }
-});
-
-// ============================================================
 // MATURITY SLIDER
 // ============================================================
 
@@ -238,10 +177,10 @@ function buildSummary() {
   // Empresa
   const empCard = document.getElementById('summary-empresa');
   empCard.innerHTML = '<div class="card-title">Empresa</div>' + rows([
-    ['Empresa', get('company-name')],
+    ['Nombre', get('company-name')],
     ['Industria', getText('#industry', get('industry'))],
-    ['Equipo', getText('#team-size', get('team-size'))],
-    ['Área', getText('#team-area', get('team-area'))],
+    ['Tamaño de equipo', getText('#team-size', get('team-size'))],
+    ['Área / Departamento', getText('#team-area', get('team-area'))],
     ['Contacto / Sponsor', get('contact-name')],
     ['Inicio estimado', getText('#start-date', get('start-date') || 'inmediato')],
   ]);
@@ -316,9 +255,9 @@ async function generatePresentation() {
     if (!response.ok) throw new Error(`Error del servidor: ${response.status}`);
     setGenStep(3, 'done');
 
-    // Step 4 & 5: Building PPTX
+    // Step 4: Create Google Slides
     setGenStep(4, 'active');
-    document.getElementById('gen-status').textContent = 'Construyendo el PPTX…';
+    document.getElementById('gen-status').textContent = 'Creando presentación en Google Slides…';
 
     const result = await response.json();
     console.log('🔍 N8N RESPONSE:', JSON.stringify(result).substring(0, 300));
@@ -326,20 +265,14 @@ async function generatePresentation() {
 
     setGenStep(5, 'active');
 
-    // Descarga directa desde el navegador
-    let downloadUrl = null;
-    const filename = result.filename || `Fuerza_Plan_${payload.company.name.replace(/[^a-zA-Z0-9]/g,'_')}.pptx`;
-
-    if (result.file_base64) {
-      const binary = atob(result.file_base64);
-      const bytes = new Uint8Array(binary.length);
-      for (let i = 0; i < binary.length; i++) bytes[i] = binary.charCodeAt(i);
-      const blob = new Blob([bytes], { type: 'application/vnd.openxmlformats-officedocument.presentationml.presentation' });
-      downloadUrl = URL.createObjectURL(blob);
+    // Get Google Slides URL
+    let slideUrl = null;
+    if (result.presentationUrl) {
+      slideUrl = result.presentationUrl;
     }
 
     setGenStep(5, 'done');
-    setTimeout(() => showSuccess(downloadUrl, filename, payload.company.name), 600);
+    setTimeout(() => showSuccess(slideUrl, payload.company.name), 600);
 
   } catch (err) {
     console.error(err);
@@ -360,7 +293,6 @@ function buildPayload(filesData) {
       team_size: get('team-size'),
       team_area: get('team-area'),
       contact_name: get('contact-name'),
-      web_info: state.companyInfo || null,
     },
     challenge: {
       pain_main: get('pain-main'),
@@ -375,7 +307,7 @@ function buildPayload(filesData) {
     files: filesData,
     meta: {
       generated_at: new Date().toISOString(),
-      generator_version: '1.0',
+      generator_version: '2.0',
     },
   };
 }
@@ -426,8 +358,8 @@ function setGenStep(n, status) {
       1: 'Preparando archivos adjuntos…',
       2: 'Recopilando datos del formulario…',
       3: 'Gemini generando contenido personalizado…',
-      4: 'Construyendo el PPTX…',
-      5: 'Finalizando descarga…',
+      4: 'Creando Google Slides…',
+      5: 'Finalizando…',
     };
     document.getElementById('gen-status').textContent = labels[n] || '';
   }
@@ -437,7 +369,7 @@ function setGenStep(n, status) {
 // SUCCESS
 // ============================================================
 
-function showSuccess(url, filename, companyName) {
+function showSuccess(slideUrl, companyName) {
   hideOverlay();
 
   // Hide all sections
@@ -448,13 +380,14 @@ function showSuccess(url, filename, companyName) {
     ind.classList.add('done');
   }
 
-  state.generatedFileUrl = url;
+  state.presentationUrl = slideUrl;
   document.getElementById('success-company').textContent = companyName;
 
   const dl = document.getElementById('btn-download');
-  if (url) {
-    dl.href = url;
-    dl.download = filename;
+  if (slideUrl) {
+    dl.href = slideUrl;
+    dl.target = '_blank';
+    dl.textContent = 'Ver en Google Slides';
     dl.style.display = 'inline-flex';
   } else {
     dl.style.display = 'none';
@@ -470,11 +403,9 @@ function resetForm() {
   document.querySelectorAll('input[type="text"], textarea').forEach(el => el.value = '');
   document.querySelectorAll('select').forEach(el => el.selectedIndex = 0);
   document.querySelectorAll('input[type="checkbox"]').forEach(el => el.checked = false);
-  document.getElementById('company-info-card').classList.remove('visible');
   document.getElementById('files-list').innerHTML = '';
   state.uploadedFiles = [];
-  state.companyInfo = null;
-  state.generatedFileUrl = null;
+  state.presentationUrl = null;
   document.getElementById('btn-generate').disabled = false;
   document.getElementById('maturity-label').textContent = MATURITY_LABELS[3];
   document.getElementById('digital-maturity').value = 3;
