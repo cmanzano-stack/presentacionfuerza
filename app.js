@@ -123,7 +123,7 @@ async function searchCompany() {
 
   try {
     // Call n8n webhook endpoint for company lookup
-    const res = await fetch(CONFIG.N8N_WEBHOOK_URL + '/company-lookup', {
+    const res = await fetch('https://n8n.openip.cl/webhook/fuerza-company-lookup', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ company_name: name }),
@@ -318,25 +318,10 @@ async function generatePresentation() {
     setGenStep(4, 'done');
 
     setGenStep(5, 'active');
-
-    // Result can be a direct file URL or base64
-    let downloadUrl = null;
-    let filename = `Fuerza_Plan_${payload.company.name.replace(/\s+/g, '_')}_D14-D30-D90.pptx`;
-
-    if (result.file_url) {
-      downloadUrl = result.file_url;
-    } else if (result.file_base64) {
-      const binary = atob(result.file_base64);
-      const bytes = new Uint8Array(binary.length);
-      for (let i = 0; i < binary.length; i++) bytes[i] = binary.charCodeAt(i);
-      const blob = new Blob([bytes], { type: 'application/vnd.openxmlformats-officedocument.presentationml.presentation' });
-      downloadUrl = URL.createObjectURL(blob);
-    }
-
     setGenStep(5, 'done');
 
-    // Show success
-    setTimeout(() => showSuccess(downloadUrl, filename, payload.company.name), 600);
+    // El PPTX se envía por email
+    setTimeout(() => showSuccess(null, null, payload.company.name), 600);
 
   } catch (err) {
     console.error(err);
