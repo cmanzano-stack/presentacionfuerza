@@ -256,8 +256,14 @@ function buildSummary() {
     ['Madurez digital', MATURITY_LABELS[get('digital-maturity')]],
   ]);
 
-  // Módulos
-  const mods = [...document.querySelectorAll('.check-grid input:checked')].map(el => el.closest('label').querySelector('.check-text').childNodes[0].textContent.trim());
+  // Módulos — null-safe
+  const mods = [...document.querySelectorAll('.check-grid input:checked')].map(el => {
+    const label = el.closest('.check-item')?.querySelector('label');
+    const span = label?.querySelector('.check-text');
+    if (!span) return el.value;
+    const textNode = [...span.childNodes].find(n => n.nodeType === 3 && n.textContent.trim());
+    return textNode ? textNode.textContent.trim() : span.textContent.trim().split('\n')[0].trim();
+  }).filter(Boolean);
   const files = state.uploadedFiles.map(f => f.name).join(', ') || 'Ninguno';
   const modCard = document.getElementById('summary-modulos');
   modCard.innerHTML = '<div class="card-title">Módulos y archivos</div>' + rows([
