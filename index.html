@@ -1,188 +1,504 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-  <meta charset="UTF-8" />
-  <title>Generador Plan Fuerza</title>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Fuerza · Generador de Plan de Implementación</title>
+<link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@300;400;600;700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --red: #fa345e; --red-light: #fef2f4; --red-dark: #d01f46;
+    --bg: #f9f9f9; --white: #ffffff; --text: #1a1a2e;
+    --text-muted: #666; --text-dim: #aaa; --border: #eee;
+    --radius: 12px; --radius-sm: 8px;
+    --shadow-card: 0 2px 8px rgba(0,0,0,0.06);
+    --success: #0a6640; --success-bg: #f0fff8;
+  }
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: 'Montserrat', sans-serif; background: var(--bg); color: var(--text); min-height: 100vh; }
 
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  .topbar { background: var(--white); border-bottom: 1px solid var(--border); padding: 0 28px; height: 58px; display: flex; align-items: center; justify-content: space-between; position: sticky; top: 0; z-index: 100; box-shadow: 0 1px 4px rgba(0,0,0,0.06); }
+  .topbar-logo { height: 26px; }
+  .topbar-badge { background: var(--red-light); color: var(--red); border-radius: 100px; padding: 4px 14px; font-size: 11px; font-weight: 700; letter-spacing: 0.05em; text-transform: uppercase; }
 
-  <style>
-    body {
-      font-family: Arial, sans-serif;
-      background: #f9f9f9;
-      padding: 20px;
-    }
+  .hero { background: var(--red); color: white; text-align: center; padding: 44px 24px 52px; position: relative; overflow: hidden; }
+  .hero::after { content: ''; position: absolute; bottom: -1px; left: 0; right: 0; height: 24px; background: var(--bg); border-radius: 24px 24px 0 0; }
+  .hero-tag { display: inline-block; background: rgba(255,255,255,0.18); border: 1px solid rgba(255,255,255,0.28); border-radius: 100px; padding: 4px 16px; font-size: 10px; font-weight: 700; letter-spacing: 0.12em; text-transform: uppercase; margin-bottom: 18px; }
+  .hero h1 { font-size: clamp(22px, 4vw, 32px); font-weight: 700; line-height: 1.25; margin-bottom: 10px; }
+  .hero p { font-size: 13px; opacity: 0.88; max-width: 440px; margin: 0 auto; line-height: 1.75; font-weight: 400; }
 
-    .container {
-      max-width: 600px;
-      margin: auto;
-      background: white;
-      padding: 20px;
-      border-radius: 12px;
-      box-shadow: 0 4px 12px rgba(0,0,0,0.05);
-    }
+  .steps-wrap { background: var(--white); border-bottom: 1px solid var(--border); padding: 0 20px; }
+  .steps-bar { max-width: 660px; margin: 0 auto; display: flex; }
+  .step-tab { flex: 1; display: flex; align-items: center; justify-content: center; gap: 7px; padding: 14px 6px; font-size: 11px; font-weight: 600; color: var(--text-dim); border-bottom: 2.5px solid transparent; cursor: default; transition: all 0.2s; }
+  .step-tab.active { color: var(--red); border-bottom-color: var(--red); }
+  .step-tab.done { color: var(--text-muted); cursor: pointer; }
+  .step-tab.done:hover { color: var(--red); }
+  .step-num { width: 20px; height: 20px; border-radius: 50%; border: 1.5px solid currentColor; display: flex; align-items: center; justify-content: center; font-size: 9px; flex-shrink: 0; }
+  .step-tab.active .step-num { background: var(--red); border-color: var(--red); color: white; }
+  .step-tab.done .step-num { background: var(--text-dim); border-color: var(--text-dim); color: white; font-size: 0; }
+  .step-tab.done .step-num::after { content: '✓'; font-size: 9px; }
+  .step-label { display: none; }
+  @media (min-width: 440px) { .step-label { display: block; } }
 
-    h1 {
-      font-size: 20px;
-      margin-bottom: 10px;
-    }
+  .main { max-width: 660px; margin: 0 auto; padding: 28px 18px 80px; }
+  .section { display: none; animation: fadeIn 0.28s ease; }
+  .section.active { display: block; }
+  @keyframes fadeIn { from { opacity:0; transform:translateY(8px); } to { opacity:1; transform:translateY(0); } }
 
-    label {
-      font-size: 13px;
-      font-weight: bold;
-      margin-top: 15px;
-      display: block;
-    }
+  .section-header { margin-bottom: 20px; }
+  .section-tag { display: inline-block; background: var(--red-light); color: var(--red); border-radius: 100px; padding: 3px 12px; font-size: 10px; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; margin-bottom: 8px; }
+  .section-title { font-size: 20px; font-weight: 700; color: var(--text); margin-bottom: 5px; }
+  .section-desc { font-size: 12px; color: var(--text-muted); line-height: 1.65; font-weight: 400; }
 
-    input, textarea {
-      width: 100%;
-      padding: 10px;
-      margin-top: 5px;
-      border-radius: 8px;
-      border: 1px solid #ddd;
-      font-size: 13px;
-    }
+  .card { background: var(--white); border: 1px solid var(--border); border-radius: var(--radius); padding: 22px; margin-bottom: 14px; box-shadow: var(--shadow-card); }
+  .card-title { font-size: 10px; font-weight: 700; color: var(--red); text-transform: uppercase; letter-spacing: 0.1em; margin-bottom: 16px; padding-bottom: 10px; border-bottom: 1px solid var(--red-light); }
 
-    textarea {
-      resize: vertical;
-    }
+  .field-group { margin-bottom: 16px; }
+  .field-group:last-child { margin-bottom: 0; }
+  label { display: block; font-size: 12px; font-weight: 600; color: var(--text); margin-bottom: 5px; }
+  label .req { color: var(--red); margin-left: 2px; }
+  label .tip { font-weight: 400; color: var(--text-muted); font-size: 11px; }
+  input[type="text"], input[type="email"], textarea, select { width: 100%; background: var(--white); border: 1px solid #ddd; border-radius: var(--radius-sm); color: var(--text); font-family: 'Montserrat', sans-serif; font-size: 13px; font-weight: 400; padding: 10px 13px; transition: border-color 0.2s; outline: none; -webkit-appearance: none; }
+  input:focus, textarea:focus, select:focus { border-color: var(--red); box-shadow: 0 0 0 3px rgba(250,52,94,0.08); }
+  input.error, textarea.error, select.error { border-color: var(--red); background: var(--red-light); }
+  textarea { resize: vertical; min-height: 85px; line-height: 1.6; }
+  select { background-color: #fafafa; cursor: pointer; }
+  .field-error { font-size: 11px; color: var(--red); margin-top: 4px; font-weight: 600; display: none; }
+  .field-error.visible { display: block; }
+  .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+  @media (max-width: 480px) { .grid-2 { grid-template-columns: 1fr; } }
 
-    .toggle-buttons {
-      display: flex;
-      gap: 10px;
-      margin-bottom: 10px;
-    }
+  /* CLIENTE SELECTOR */
+  .client-type-toggle { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 16px; }
+  .client-type-btn { padding: 14px 12px; border: 1.5px solid var(--border); border-radius: var(--radius-sm); background: var(--white); font-family: 'Montserrat', sans-serif; font-size: 12px; font-weight: 600; color: var(--text-muted); cursor: pointer; transition: all 0.2s; text-align: center; line-height: 1.4; }
+  .client-type-btn .btn-icon { display: block; font-size: 20px; margin-bottom: 5px; }
+  .client-type-btn.active { border-color: var(--red); background: var(--red-light); color: var(--red); }
+  .client-existing-wrap { display: none; animation: fadeIn 0.2s ease; }
+  .client-existing-wrap.visible { display: block; }
+  .client-loading { display: flex; align-items: center; gap: 8px; font-size: 11px; color: var(--text-muted); padding: 10px 0; }
+  .client-spinner { width: 14px; height: 14px; border: 2px solid var(--red-light); border-top-color: var(--red); border-radius: 50%; animation: spin 0.8s linear infinite; flex-shrink: 0; }
+  @keyframes spin { to { transform: rotate(360deg); } }
 
-    .toggle-buttons button {
-      flex: 1;
-      padding: 10px;
-      border-radius: 8px;
-      border: 1px solid #fa345e;
-      background: white;
-      color: #fa345e;
-      cursor: pointer;
-      font-weight: bold;
-    }
+  /* DRIVER */
+  .driver-grid { display: grid; gap: 8px; }
+  .driver-item { position: relative; }
+  .driver-item input[type="radio"] { position: absolute; opacity: 0; width: 0; height: 0; }
+  .driver-item label { display: flex; align-items: flex-start; gap: 10px; background: var(--white); border: 1.5px solid var(--border); border-radius: var(--radius-sm); padding: 12px 14px; cursor: pointer; transition: all 0.2s; margin-bottom: 0; }
+  .driver-item input:checked + label { border-color: var(--red); background: var(--red-light); }
+  .driver-icon { font-size: 20px; flex-shrink: 0; margin-top: 1px; }
+  .driver-name { font-size: 12px; font-weight: 700; color: var(--text); margin-bottom: 2px; }
+  .driver-desc { font-size: 11px; color: var(--text-muted); line-height: 1.45; font-weight: 400; }
 
-    .toggle-buttons button.active {
-      background: #fa345e;
-      color: white;
-    }
+  /* CHECKBOXES */
+  .check-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+  @media (max-width: 480px) { .check-grid { grid-template-columns: 1fr; } }
+  .check-item { position: relative; }
+  .check-item input[type="checkbox"] { position: absolute; opacity: 0; width: 0; height: 0; }
+  .check-item label { display: flex; align-items: flex-start; gap: 9px; background: var(--white); border: 1.5px solid var(--border); border-radius: var(--radius-sm); padding: 11px 13px; cursor: pointer; transition: all 0.2s; margin-bottom: 0; font-size: 12px; font-weight: 400; color: var(--text); }
+  .check-item input:checked + label { border-color: var(--red); background: var(--red-light); }
+  .check-box { width: 15px; height: 15px; border: 1.5px solid #ccc; border-radius: 3px; flex-shrink: 0; margin-top: 1px; transition: all 0.2s; display: flex; align-items: center; justify-content: center; background: white; }
+  .check-item input:checked + label .check-box { background: var(--red); border-color: var(--red); }
+  .check-box::after { content: ''; width: 7px; height: 4px; border-left: 1.5px solid white; border-bottom: 1.5px solid white; transform: rotate(-45deg) translateY(-1px); display: none; }
+  .check-item input:checked + label .check-box::after { display: block; }
+  .check-text { line-height: 1.4; font-weight: 600; }
+  .check-sub { font-size: 10px; color: var(--text-muted); margin-top: 2px; display: block; font-weight: 400; }
 
-    button[type="submit"] {
-      margin-top: 20px;
-      width: 100%;
-      background: #fa345e;
-      color: white;
-      border: none;
-      padding: 12px;
-      border-radius: 8px;
-      font-weight: bold;
-      cursor: pointer;
-    }
+  input[type="range"] { width: 100%; height: 4px; background: #eee; border: none; border-radius: 2px; outline: none; padding: 0; cursor: pointer; -webkit-appearance: none; box-shadow: none; }
+  input[type="range"]::-webkit-slider-thumb { -webkit-appearance: none; width: 18px; height: 18px; border-radius: 50%; background: var(--red); cursor: pointer; border: 2px solid white; box-shadow: 0 0 0 2px var(--red); }
+  .range-labels { display: flex; justify-content: space-between; margin-top: 6px; font-size: 10px; color: var(--text-dim); font-weight: 500; }
+  .range-val { text-align: center; font-size: 11px; color: var(--red); font-weight: 700; margin-top: 4px; }
 
-    /* AUTOCOMPLETE */
-    .suggestions {
-      border: 1px solid #eee;
-      border-radius: 8px;
-      margin-top: 6px;
-      max-height: 150px;
-      overflow-y: auto;
-      background: white;
-    }
+  .upload-zone { border: 1.5px dashed #ccc; border-radius: var(--radius); padding: 24px 16px; text-align: center; cursor: pointer; transition: all 0.2s; position: relative; background: #fafafa; }
+  .upload-zone:hover, .upload-zone.drag-over { border-color: var(--red); background: var(--red-light); }
+  .upload-zone input[type="file"] { position: absolute; inset: 0; opacity: 0; cursor: pointer; width: 100%; height: 100%; border: none; box-shadow: none; padding: 0; }
+  .upload-icon { width: 38px; height: 38px; background: var(--red-light); border-radius: 9px; display: flex; align-items: center; justify-content: center; margin: 0 auto 9px; }
+  .upload-icon svg { width: 18px; height: 18px; stroke: var(--red); fill: none; stroke-width: 1.5; stroke-linecap: round; }
+  .upload-text { font-size: 12px; color: var(--text-muted); font-weight: 500; }
+  .upload-text strong { color: var(--red); }
+  .upload-sub { font-size: 10px; color: var(--text-dim); margin-top: 3px; }
+  .files-list { margin-top: 8px; display: flex; flex-direction: column; gap: 5px; }
+  .file-chip { display: flex; align-items: center; gap: 9px; background: var(--white); border: 1px solid var(--border); border-radius: 7px; padding: 8px 11px; font-size: 11px; }
+  .file-chip-name { flex: 1; color: var(--text); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-weight: 600; }
+  .file-chip-size { color: var(--text-dim); font-size: 10px; flex-shrink: 0; }
+  .file-chip-remove { cursor: pointer; color: var(--text-dim); font-size: 16px; line-height: 1; flex-shrink: 0; transition: color 0.2s; }
+  .file-chip-remove:hover { color: var(--red); }
 
-    .suggestion-item {
-      padding: 8px 12px;
-      cursor: pointer;
-      font-size: 12px;
-    }
+  .nav-row { display: flex; justify-content: space-between; align-items: center; margin-top: 24px; padding-top: 20px; border-top: 1px solid var(--border); }
+  .btn-back { background: none; border: 1.5px solid #ddd; border-radius: var(--radius-sm); color: var(--text-muted); font-family: 'Montserrat', sans-serif; font-size: 12px; font-weight: 600; padding: 9px 18px; cursor: pointer; transition: all 0.2s; }
+  .btn-back:hover { border-color: var(--red); color: var(--red); }
+  .btn-next { background: var(--red); border: none; border-radius: var(--radius-sm); color: white; font-family: 'Montserrat', sans-serif; font-size: 12px; font-weight: 700; padding: 10px 22px; cursor: pointer; transition: opacity 0.2s; display: flex; align-items: center; gap: 7px; }
+  .btn-next:hover { opacity: 0.88; }
+  .btn-next svg { width: 14px; height: 14px; stroke: white; fill: none; stroke-width: 2.5; stroke-linecap: round; stroke-linejoin: round; }
 
-    .suggestion-item:hover {
-      background: #fef2f4;
-    }
+  .btn-generate { width: 100%; background: var(--red); border: none; border-radius: var(--radius); color: white; font-family: 'Montserrat', sans-serif; font-size: 15px; font-weight: 700; padding: 17px; cursor: pointer; transition: opacity 0.2s; display: flex; align-items: center; justify-content: center; gap: 9px; margin-top: 20px; box-shadow: 0 4px 16px rgba(250,52,94,0.28); }
+  .btn-generate:hover { opacity: 0.9; }
+  .btn-generate:disabled { opacity: 0.4; cursor: not-allowed; box-shadow: none; }
+  .btn-generate svg { width: 17px; height: 17px; stroke: white; fill: none; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
 
-    #suggestion-hint {
-      font-size: 11px;
-      color: #666;
-      margin-top: 4px;
-      cursor: pointer;
-    }
-  </style>
+  .summary-row { display: flex; gap: 10px; font-size: 12px; padding: 7px 0; border-bottom: 1px solid var(--border); line-height: 1.5; }
+  .summary-row:last-child { border-bottom: none; padding-bottom: 0; }
+  .summary-key { color: var(--text-muted); min-width: 130px; flex-shrink: 0; font-weight: 600; }
+  .summary-val { color: var(--text); font-weight: 400; }
+
+  .overlay { display: none; position: fixed; inset: 0; background: rgba(255,255,255,0.96); z-index: 200; flex-direction: column; align-items: center; justify-content: center; text-align: center; padding: 24px; }
+  .overlay.visible { display: flex; }
+  .overlay-logo { height: 28px; margin-bottom: 28px; opacity: 0.5; }
+  .gen-spinner { width: 56px; height: 56px; border-radius: 50%; border: 3px solid var(--red-light); border-top-color: var(--red); animation: spin 0.9s linear infinite; margin-bottom: 24px; }
+  .gen-title { font-size: 20px; font-weight: 700; color: var(--text); margin-bottom: 7px; }
+  .gen-status { font-size: 12px; color: var(--text-muted); margin-bottom: 28px; font-weight: 500; }
+  .gen-steps { display: flex; flex-direction: column; gap: 9px; width: 100%; max-width: 300px; }
+  .gen-step { display: flex; align-items: center; gap: 9px; font-size: 12px; color: #ccc; font-weight: 500; transition: color 0.3s; }
+  .gen-step.active { color: var(--red); }
+  .gen-step.done { color: var(--success); }
+  .gen-step-dot { width: 7px; height: 7px; border-radius: 50%; background: currentColor; flex-shrink: 0; }
+  .gen-step.active .gen-step-dot { animation: pulse 1s ease infinite; }
+  @keyframes pulse { 0%,100%{transform:scale(1)} 50%{transform:scale(1.6)} }
+
+  .success-state { display: none; text-align: center; padding: 44px 20px; animation: fadeIn 0.35s ease; }
+  .success-state.visible { display: block; }
+  .success-icon { width: 68px; height: 68px; background: var(--success-bg); border: 2px solid #6ee7b7; border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto 18px; }
+  .success-icon svg { width: 28px; height: 28px; stroke: var(--success); fill: none; stroke-width: 2.5; stroke-linecap: round; stroke-linejoin: round; }
+  .success-title { font-size: 24px; font-weight: 700; margin-bottom: 8px; }
+  .success-desc { font-size: 13px; color: var(--text-muted); line-height: 1.7; margin-bottom: 24px; font-weight: 400; }
+  .btn-download { display: inline-flex; align-items: center; gap: 8px; background: var(--red); color: white; font-family: 'Montserrat', sans-serif; font-size: 13px; font-weight: 700; padding: 12px 26px; border-radius: var(--radius-sm); text-decoration: none; transition: opacity 0.2s; border: none; cursor: pointer; box-shadow: 0 4px 14px rgba(250,52,94,0.28); }
+  .btn-download:hover { opacity: 0.88; }
+  .btn-download svg { width: 15px; height: 15px; stroke: white; fill: none; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+  .success-actions { display: flex; flex-direction: column; align-items: center; gap: 10px; }
+  .btn-reset { display: inline-flex; align-items: center; background: none; border: 1.5px solid #ddd; color: var(--text-muted); font-family: 'Montserrat', sans-serif; font-size: 12px; font-weight: 600; padding: 10px 18px; border-radius: var(--radius-sm); cursor: pointer; transition: all 0.2s; }
+  .btn-reset:hover { border-color: var(--red); color: var(--red); }
+  .or-divider { font-size: 11px; color: var(--text-dim); }
+
+  .footer { text-align: center; padding: 20px; font-size: 11px; color: var(--text-dim); border-top: 1px solid var(--border); margin-top: 32px; }
+</style>
 </head>
-
 <body>
 
-  <div class="container">
-    <h1>Generador Plan Fuerza</h1>
+<div class="topbar">
+  <img src="https://estudios.apprecio.com/hubfs/logos/Apprecio-logo-rojo.png" class="topbar-logo" alt="Apprecio">
+  <span class="topbar-badge">Fuerza · Plan de Implementación</span>
+</div>
 
-    <form id="form-fuerza">
+<div class="hero">
+  <div class="hero-tag">Generador automático · Apprecio</div>
+  <h1>Plan de Implementación</h1>
+  <p>Completa el formulario y en segundos tendrás una presentación personalizada lista para presentar al cliente.</p>
+</div>
 
-      <!-- ========================= -->
-      <!-- TIPO CLIENTE -->
-      <!-- ========================= -->
-      <label>Tipo de cliente</label>
-      <div class="toggle-buttons">
-        <button type="button" id="btn-nuevo" class="active">Cliente nuevo</button>
-        <button type="button" id="btn-existente">Cliente existente</button>
+<div class="steps-wrap">
+  <div class="steps-bar">
+    <div class="step-tab active" id="step-ind-1" onclick="goToStep(1)"><span class="step-num">1</span><span class="step-label">Cliente</span></div>
+    <div class="step-tab" id="step-ind-2" onclick="goToStep(2)"><span class="step-num">2</span><span class="step-label">Desafío</span></div>
+    <div class="step-tab" id="step-ind-3" onclick="goToStep(3)"><span class="step-num">3</span><span class="step-label">Objetivo</span></div>
+    <div class="step-tab" id="step-ind-4" onclick="goToStep(4)"><span class="step-num">4</span><span class="step-label">Módulos</span></div>
+    <div class="step-tab" id="step-ind-5" onclick="goToStep(5)"><span class="step-num">5</span><span class="step-label">Generar</span></div>
+  </div>
+</div>
+
+<div class="main">
+
+  <!-- PASO 1: CLIENTE -->
+  <div class="section active" id="section-1">
+    <div class="section-header">
+      <div class="section-tag">Paso 1 de 5</div>
+      <div class="section-title">Información del cliente</div>
+      <div class="section-desc">Indica si es un cliente nuevo o uno que ya existe en nuestra cartera de Drive.</div>
+    </div>
+    <div class="card">
+      <div class="card-title">Tipo de cliente</div>
+      <div class="client-type-toggle">
+        <button class="client-type-btn active" id="btn-nuevo" onclick="setClientType('nuevo')">
+          <span class="btn-icon">✨</span>Cliente nuevo
+        </button>
+        <button class="client-type-btn" id="btn-existente" onclick="setClientType('existente')">
+          <span class="btn-icon">📁</span>Cliente existente
+        </button>
       </div>
 
-      <!-- ========================= -->
-      <!-- CLIENTE NUEVO -->
-      <!-- ========================= -->
-      <div id="client-new">
-        <label>Nombre de la empresa</label>
-        <input id="company-name" name="Nombre de la empresa" placeholder="Ej: Falabella" />
+      <div class="client-existing-wrap" id="client-existing-wrap">
+        <div class="field-group">
+          <label>Selecciona el cliente <span class="req">*</span></label>
+          <div class="client-loading" id="client-loading">
+            <div class="client-spinner"></div>
+            <span>Cargando clientes desde Drive…</span>
+          </div>
+          <select id="existing-client" style="display:none;">
+            <option value="">Selecciona un cliente…</option>
+          </select>
+          <div class="field-error" id="err-existing">Selecciona un cliente de la lista.</div>
+        </div>
       </div>
 
-      <!-- ========================= -->
-      <!-- CLIENTE EXISTENTE -->
-      <!-- ========================= -->
-      <div id="client-existing" style="display:none;">
-        <label>Buscar cliente</label>
-        <input id="client-search" placeholder="Escribe para buscar..." />
-        <div id="client-suggestions" class="suggestions"></div>
+      <div id="client-new-wrap">
+        <div class="field-group">
+          <label>Nombre de la empresa <span class="req">*</span></label>
+          <input type="text" id="company-name" placeholder="Ej: Mercado Pago, Falabella, CMPC…" autocomplete="off">
+          <div class="field-error" id="err-company">Este campo es requerido.</div>
+        </div>
       </div>
 
-      <!-- ========================= -->
-      <!-- OTROS CAMPOS (ejemplo) -->
-      <!-- ========================= -->
-      <label>Industria</label>
-      <input name="Industria" placeholder="Ej: Retail" />
-
-      <label>Problema principal</label>
-      <textarea name="Problema principal" placeholder="Describe el problema..."></textarea>
-
-      <label>Email</label>
-      <input type="email" name="Tu correo electronico" placeholder="correo@empresa.com" />
-
-      <!-- ========================= -->
-      <!-- SUBMIT -->
-      <!-- ========================= -->
-      <button type="submit">Generar presentación</button>
-
-    </form>
+      <div class="grid-2">
+        <div class="field-group">
+          <label>Industria <span class="req">*</span></label>
+          <select id="industry">
+            <option value="">Selecciona…</option>
+            <option value="retail">Retail y Consumo Masivo</option>
+            <option value="fintech">Fintech / Servicios Financieros</option>
+            <option value="banca">Banca y Seguros</option>
+            <option value="manufactura">Manufactura e Industria</option>
+            <option value="logistica">Logística y Transporte</option>
+            <option value="tecnologia">Tecnología / SaaS</option>
+            <option value="salud">Salud y Farmacéutica</option>
+            <option value="educacion">Educación</option>
+            <option value="gobierno">Gobierno / Sector Público</option>
+            <option value="mineria">Minería y Energía</option>
+            <option value="alimentos">Alimentos y Bebidas</option>
+            <option value="telecomunicaciones">Telecomunicaciones</option>
+            <option value="otro">Otro</option>
+          </select>
+          <div class="field-error" id="err-industry">Selecciona una industria.</div>
+        </div>
+        <div class="field-group">
+          <label>Tamaño del equipo <span class="req">*</span></label>
+          <select id="team-size">
+            <option value="">Selecciona…</option>
+            <option value="pequeno">Pequeño (10–50 personas)</option>
+            <option value="mediano">Mediano (50–200 personas)</option>
+            <option value="grande">Grande (200–1.000 personas)</option>
+            <option value="enterprise">Enterprise (1.000+ personas)</option>
+          </select>
+          <div class="field-error" id="err-team-size">Selecciona un tamaño.</div>
+        </div>
+      </div>
+      <div class="field-group">
+        <label>Área principal del equipo <span class="req">*</span></label>
+        <select id="team-area">
+          <option value="">Selecciona…</option>
+          <option value="ventas">Fuerza de ventas / Comercial</option>
+          <option value="operaciones">Operaciones / Producción</option>
+          <option value="rrhh">RRHH / People</option>
+          <option value="atencion">Atención al cliente / Servicio</option>
+          <option value="tecnologia">Tecnología / IT</option>
+          <option value="logistica">Logística / Supply Chain</option>
+          <option value="toda">Toda la organización</option>
+          <option value="otro">Otro</option>
+        </select>
+        <div class="field-error" id="err-team-area">Selecciona un área.</div>
+      </div>
+      <div class="field-group">
+        <label>Nombre del contacto / sponsor <span class="req">*</span></label>
+        <input type="text" id="contact-name" placeholder="Ej: María González, Gerente de Personas">
+        <div class="field-error" id="err-contact">Este campo es requerido.</div>
+      </div>
+      <div class="field-group">
+        <label>Tu correo electrónico <span class="req">*</span></label>
+        <input type="email" id="email-kam" placeholder="nombre@apprecio.com">
+        <div class="field-error" id="err-email">Ingresa un correo válido.</div>
+      </div>
+    </div>
+    <div class="nav-row">
+      <div></div>
+      <button class="btn-next" onclick="nextStep(1)">Continuar <svg viewBox="0 0 24 24"><path d="M5 12h14M12 5l7 7-7 7"/></svg></button>
+    </div>
   </div>
 
-  <!-- ========================= -->
-  <!-- SCRIPT -->
-  <!-- ========================= -->
-  <script src="app.js"></script>
+  <!-- PASO 2: DESAFÍO -->
+  <div class="section" id="section-2">
+    <div class="section-header">
+      <div class="section-tag">Paso 2 de 5</div>
+      <div class="section-title">El desafío y el cambio</div>
+      <div class="section-desc">Mientras más específico seas, más personalizada será la presentación.</div>
+    </div>
+    <div class="card">
+      <div class="card-title">Diagnóstico del cliente</div>
+      <div class="field-group">
+        <label>¿Cuál es el principal dolor que quieren resolver? <span class="req">*</span><br><span class="tip">Sé específico: rotación, bajo engagement, falta de visibilidad de KPIs…</span></label>
+        <textarea id="pain-main" placeholder="Ej: Alta rotación del equipo de ventas (20% mensual). Los vendedores no ven sus métricas en tiempo real…"></textarea>
+        <div class="field-error" id="err-pain">Este campo es requerido.</div>
+      </div>
+      <div class="field-group">
+        <label>¿Qué han intentado antes? <span class="tip">— Bonos manuales, Excel, reuniones, etc.</span></label>
+        <textarea id="pain-tried" rows="2" placeholder="Ej: Bonos trimestrales manuales, seguimiento en Excel, reuniones semanales de pipeline…"></textarea>
+      </div>
+      <div class="field-group">
+        <label>¿Cómo afecta esto al negocio? <span class="req">*</span></label>
+        <textarea id="pain-impact" placeholder="Ej: Perdemos el 30% de la cartera cuando rota un vendedor, el onboarding tarda 3 meses…"></textarea>
+        <div class="field-error" id="err-impact">Este campo es requerido.</div>
+      </div>
+      <div class="field-group">
+        <label>¿Qué cambio de comportamiento específico quieren lograr? <span class="req">*</span></label>
+        <textarea id="change-goal" placeholder="Ej: Que el 80% del equipo esté activo en plataforma a los 30 días…"></textarea>
+        <div class="field-error" id="err-change">Este campo es requerido.</div>
+      </div>
+      <div class="field-group">
+        <label>¿Cómo medirían el éxito a los 90 días?</label>
+        <input type="text" id="success-metric" placeholder="Ej: Rotación &lt;10%, NPS interno sobre 40, 75% activo semanalmente…">
+      </div>
+    </div>
+    <div class="card">
+      <div class="card-title">Contexto del equipo</div>
+      <div class="field-group">
+        <label>Madurez digital del equipo</label>
+        <input type="range" id="digital-maturity" min="1" max="5" value="3" oninput="updateMaturity(this.value)">
+        <div class="range-labels"><span>Sin herramientas digitales</span><span>100% data-driven</span></div>
+        <div class="range-val" id="maturity-label">Nivel 3 — Uso mixto de herramientas</div>
+      </div>
+      <div class="field-group">
+        <label>¿Cuándo estiman comenzar?</label>
+        <select id="start-date">
+          <option value="inmediato">Inmediato (próximas 2 semanas)</option>
+          <option value="mes1">En 1 mes</option>
+          <option value="mes2">En 2–3 meses</option>
+          <option value="mas3">En más de 3 meses</option>
+          <option value="por_definir">Por definir</option>
+        </select>
+      </div>
+    </div>
+    <div class="nav-row">
+      <button class="btn-back" onclick="prevStep(2)">← Atrás</button>
+      <button class="btn-next" onclick="nextStep(2)">Continuar <svg viewBox="0 0 24 24"><path d="M5 12h14M12 5l7 7-7 7"/></svg></button>
+    </div>
+  </div>
 
-  <script>
-    // Manejo visual de botones (UX)
-    const btnNuevo = document.getElementById('btn-nuevo');
-    const btnExistente = document.getElementById('btn-existente');
+  <!-- PASO 3: OBJETIVO / DRIVER -->
+  <div class="section" id="section-3">
+    <div class="section-header">
+      <div class="section-tag">Paso 3 de 5</div>
+      <div class="section-title">Objetivo principal del programa</div>
+      <div class="section-desc">Selecciona el driver que mejor describe lo que quiere lograr este cliente. Define las acciones D+14, D+30 y D+90.</div>
+    </div>
+    <div class="card">
+      <div class="card-title">¿Qué quiere lograr el cliente?</div>
+      <div class="driver-grid">
+        <div class="driver-item">
+          <input type="radio" name="driver" id="drv-a" value="Aumentar engagement y sentido de pertenencia">
+          <label for="drv-a"><span class="driver-icon">🤝</span><div><div class="driver-name">Aumentar engagement y pertenencia</div><div class="driver-desc">El equipo está desmotivado. Su esfuerzo no se ve ni se reconoce. Queremos que la gente quiera venir a trabajar.</div></div></label>
+        </div>
+        <div class="driver-item">
+          <input type="radio" name="driver" id="drv-b" value="Incrementar performance comercial">
+          <label for="drv-b"><span class="driver-icon">📈</span><div><div class="driver-name">Incrementar performance comercial</div><div class="driver-desc">Tenemos metas de venta que no se cumplen. Necesitamos visibilidad del avance y que el equipo sienta que vale la pena esforzarse.</div></div></label>
+        </div>
+        <div class="driver-item">
+          <input type="radio" name="driver" id="drv-c" value="Mejorar productividad organizacional">
+          <label for="drv-c"><span class="driver-icon">⚙️</span><div><div class="driver-name">Mejorar productividad organizacional</div><div class="driver-desc">Las tareas no se completan a tiempo, hay mucho trabajo manual y poco seguimiento. No es un equipo comercial.</div></div></label>
+        </div>
+        <div class="driver-item">
+          <input type="radio" name="driver" id="drv-d" value="Capacitar y nivelar al equipo">
+          <label for="drv-d"><span class="driver-icon">🎓</span><div><div class="driver-name">Capacitar y nivelar al equipo</div><div class="driver-desc">El equipo necesita aprender o certificarse. El conocimiento es desigual y eso afecta los resultados.</div></div></label>
+        </div>
+        <div class="driver-item">
+          <input type="radio" name="driver" id="drv-e" value="Reducir la rotación de personas">
+          <label for="drv-e"><span class="driver-icon">🔒</span><div><div class="driver-name">Reducir la rotación de personas</div><div class="driver-desc">Estamos perdiendo colaboradores clave. El costo de reemplazarlos es alto y queremos retener el talento.</div></div></label>
+        </div>
+        <div class="driver-item">
+          <input type="radio" name="driver" id="drv-f" value="Centralizar todos los reconocimientos en un solo lugar">
+          <label for="drv-f"><span class="driver-icon">🏆</span><div><div class="driver-name">Centralizar reconocimientos</div><div class="driver-desc">Hoy los reconocimientos se hacen por correo o Excel. Queremos todo en una sola plataforma con reglas claras.</div></div></label>
+        </div>
+      </div>
+      <div class="field-error" id="err-driver" style="margin-top:8px;">Selecciona un objetivo.</div>
+    </div>
+    <div class="nav-row">
+      <button class="btn-back" onclick="prevStep(3)">← Atrás</button>
+      <button class="btn-next" onclick="nextStep(3)">Continuar <svg viewBox="0 0 24 24"><path d="M5 12h14M12 5l7 7-7 7"/></svg></button>
+    </div>
+  </div>
 
-    btnNuevo.onclick = () => {
-      btnNuevo.classList.add('active');
-      btnExistente.classList.remove('active');
-    };
+  <!-- PASO 4: MÓDULOS -->
+  <div class="section" id="section-4">
+    <div class="section-header">
+      <div class="section-tag">Paso 4 de 5</div>
+      <div class="section-title">Módulos y contexto adicional</div>
+      <div class="section-desc">Selecciona los módulos que más interesan al cliente.</div>
+    </div>
+    <div class="card">
+      <div class="card-title">Módulos Fuerza de mayor interés</div>
+      <div class="check-grid">
+        <div class="check-item"><input type="checkbox" id="mod-p2p" value="reconocimiento_p2p"><label for="mod-p2p"><span class="check-box"></span><span class="check-text">Reconocimiento P2P / M2E / M2T<span class="check-sub">Entre pares, líderes y equipos</span></span></label></div>
+        <div class="check-item"><input type="checkbox" id="mod-challenges" value="challenges"><label for="mod-challenges"><span class="check-box"></span><span class="check-text">Challenges Gamificados<span class="check-sub">Metas, XP y leaderboards</span></span></label></div>
+        <div class="check-item"><input type="checkbox" id="mod-encuestas" value="encuestas"><label for="mod-encuestas"><span class="check-box"></span><span class="check-text">Encuestas y Pulso<span class="check-sub">Clima, eNPS, feedback continuo</span></span></label></div>
+        <div class="check-item"><input type="checkbox" id="mod-entrenamientos" value="entrenamientos"><label for="mod-entrenamientos"><span class="check-box"></span><span class="check-text">Entrenamientos y Coaching<span class="check-sub">Certificaciones, quizzes, misiones</span></span></label></div>
+        <div class="check-item"><input type="checkbox" id="mod-worklife" value="worklife_rewards"><label for="mod-worklife"><span class="check-box"></span><span class="check-text">Work-Life Rewards<span class="check-sub">PTO, flexibilidad, bienestar</span></span></label></div>
+        <div class="check-item"><input type="checkbox" id="mod-premios" value="premios_nominaciones"><label for="mod-premios"><span class="check-box"></span><span class="check-text">Premios y Nominaciones<span class="check-sub">Rituales de reconocimiento formal</span></span></label></div>
+      </div>
+    </div>
+    <div class="card">
+      <div class="card-title">Archivos del cliente (opcional)</div>
+      <div class="upload-zone" id="upload-zone">
+        <input type="file" id="file-input" multiple accept=".pdf,.pptx,.ppt,.docx,.doc,.txt" onchange="handleFiles(this.files)">
+        <div class="upload-icon"><svg viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg></div>
+        <div class="upload-text"><strong>Arrastra archivos aquí</strong> o haz clic para seleccionar</div>
+        <div class="upload-sub">PDF, PPTX, DOCX, TXT · Máx. 10MB por archivo</div>
+      </div>
+      <div class="files-list" id="files-list"></div>
+    </div>
+    <div class="card">
+      <div class="card-title">Notas adicionales</div>
+      <div class="field-group">
+        <label>Contexto libre — reuniones previas, acuerdos, particularidades del cliente</label>
+        <textarea id="extra-context" rows="3" placeholder="Cualquier información que quieras que consideremos al generar el plan…"></textarea>
+      </div>
+    </div>
+    <div class="nav-row">
+      <button class="btn-back" onclick="prevStep(4)">← Atrás</button>
+      <button class="btn-next" onclick="nextStep(4)">Revisar y generar <svg viewBox="0 0 24 24"><path d="M5 12h14M12 5l7 7-7 7"/></svg></button>
+    </div>
+  </div>
 
-    btnExistente.onclick = () => {
-      btnExistente.classList.add('active');
-      btnNuevo.classList.remove('active');
-    };
-  </script>
+  <!-- PASO 5: RESUMEN -->
+  <div class="section" id="section-5">
+    <div class="section-header">
+      <div class="section-tag">Paso 5 de 5</div>
+      <div class="section-title">Revisa y genera</div>
+      <div class="section-desc">Confirma la información antes de generar la presentación.</div>
+    </div>
+    <div class="card" id="summary-empresa"><div class="card-title">Empresa</div></div>
+    <div class="card" id="summary-desafio"><div class="card-title">Desafío</div></div>
+    <div class="card" id="summary-modulos"><div class="card-title">Módulos y archivos</div></div>
+    <button class="btn-generate" id="btn-generate" onclick="generatePresentation()">
+      <svg viewBox="0 0 24 24"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/></svg>
+      Generar presentación de implementación
+    </button>
+    <div class="nav-row">
+      <button class="btn-back" onclick="prevStep(5)">← Atrás</button>
+      <div></div>
+    </div>
+  </div>
 
+  <!-- SUCCESS -->
+  <div class="success-state" id="success-state">
+    <div class="success-icon"><svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg></div>
+    <div class="success-title">¡Presentación lista!</div>
+    <div class="success-desc">El plan para <strong id="success-company"></strong> fue generado y enviado a tu correo.</div>
+    <div class="success-actions">
+      <a class="btn-download" id="btn-download" href="#" target="_blank">
+        <svg viewBox="0 0 24 24"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
+        Ver en Google Slides
+      </a>
+      <span class="or-divider">o</span>
+      <button class="btn-reset" onclick="resetForm()">Generar otra presentación</button>
+    </div>
+  </div>
+</div>
+
+<div class="footer">Apprecio · Fuerza &nbsp;·&nbsp; Generador automático de planes de implementación &nbsp;·&nbsp; cmanzano@apprecio.com</div>
+
+<div class="overlay" id="generating-overlay">
+  <img src="https://estudios.apprecio.com/hubfs/logos/Apprecio-logo-rojo.png" class="overlay-logo" alt="Apprecio">
+  <div class="gen-spinner"></div>
+  <div class="gen-title">Enviando tu solicitud…</div>
+  <div class="gen-status" id="gen-status">Iniciando proceso</div>
+  <div class="gen-steps">
+    <div class="gen-step" id="gstep-1"><div class="gen-step-dot"></div><span>Preparando archivos adjuntos</span></div>
+    <div class="gen-step" id="gstep-2"><div class="gen-step-dot"></div><span>Recopilando datos del formulario</span></div>
+    <div class="gen-step" id="gstep-3"><div class="gen-step-dot"></div><span>Enviando a Fuerza para procesar</span></div>
+    <div class="gen-step" id="gstep-4"><div class="gen-step-dot"></div><span>Confirmando recepción</span></div>
+    <div class="gen-step" id="gstep-5"><div class="gen-step-dot"></div><span>¡Listo! Recibirás el plan por correo</span></div>
+  </div>
+  <div id="gen-time-note" style="display:none;margin-top:16px;font-size:11px;color:#aaa;max-width:280px;text-align:center;line-height:1.6;">
+    La IA genera el contenido personalizado en segundo plano.<br>
+    Recibirás el link en tu correo en <strong style="color:#fa345e;">5–10 minutos</strong>.
+  </div>
+</div>
+
+<script src="app.js"></script>
 </body>
 </html>
