@@ -313,6 +313,10 @@ async function generatePresentation() {
     if (!response.ok) throw new Error(`Error del servidor: ${response.status}`);
     setGenStep(3, 'done');
 
+    // Mostrar nota de tiempo estimado
+    const timeNote = document.getElementById('gen-time-note');
+    if (timeNote) timeNote.style.display = 'block';
+
     setGenStep(4, 'active');
     setGenStep(4, 'done');
 
@@ -320,7 +324,7 @@ async function generatePresentation() {
     setGenStep(5, 'done');
 
     // Fire-and-forget: n8n procesa en segundo plano y envía por email
-    setTimeout(() => showSuccessEmail(getCompanyName()), 600);
+    setTimeout(() => showSuccessEmail(getCompanyName()), 1200);
 
   } catch (err) {
     console.error(err);
