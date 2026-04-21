@@ -220,7 +220,95 @@ function setClientType(type) {
     clearClientSelection();
     clientesLoaded = false;
     allClients = [];
+    // Cuando vuelve a cliente nuevo, cargar lista en background para poder validar
+    prefetchClients();
   }
+}
+
+// Carga clientes en background sin mostrar UI (para validar cliente nuevo)
+async function prefetchClients() {
+  if (clientesLoaded) return;
+  try {
+    const res = await fetch(CONFIG.N8N_LIST_CLIENTS_URL);
+    if (!res.ok) return;
+    const data = await res.json();
+    allClients = (data.clients || []).sort();
+    clientesLoaded = true;
+  } catch (e) {
+    // silencioso — no afecta al usuario
+  }
+}
+
+// Verifica si el nombre ingresado ya existe en Drive
+function checkDuplicateClient() {
+  const input = document.getElementById('company-name');
+  const name = input.value.trim();
+  if (!name || allClients.length === 0) return;
+
+  const match = allClients.find(c => cleanName(c) === cleanName(name));
+  if (match) {
+    showDuplicateModal(match);
+  }
+}
+
+function showDuplicateModal(existingName) {
+  // Crear modal si no existe
+  let modal = document.getElementById('duplicate-modal');
+  if (!modal) {
+    modal = document.createElement('div');
+    modal.id = 'duplicate-modal';
+    modal.style.cssText = `
+      position: fixed; inset: 0; background: rgba(0,0,0,0.45);
+      z-index: 300; display: flex; align-items: center; justify-content: center;
+      padding: 20px; animation: fadeIn 0.2s ease;
+    `;
+    modal.innerHTML = `
+      <div style="background:white; border-radius:16px; padding:28px 24px; max-width:380px; width:100%; box-shadow:0 8px 32px rgba(0,0,0,0.18); text-align:center;">
+        <div style="width:52px;height:52px;background:#fef2f4;border-radius:50%;display:flex;align-items:center;justify-content:center;margin:0 auto 16px;font-size:24px;">📁</div>
+        <div style="font-size:16px;font-weight:700;color:#1a1a2e;margin-bottom:8px;">Cliente ya existe</div>
+        <div style="font-size:13px;color:#666;line-height:1.6;margin-bottom:20px;">
+          <strong id="dup-name" style="color:#fa345e;"></strong> ya tiene carpeta en Drive.<br>
+          ¿Quieres continuar como cliente existente?
+        </div>
+        <div style="display:flex;flex-direction:column;gap:10px;">
+          <button id="dup-btn-existente" style="background:#fa345e;color:white;border:none;border-radius:8px;padding:11px 20px;font-family:Montserrat,sans-serif;font-size:13px;font-weight:700;cursor:pointer;">
+            Sí, usar cliente existente
+          </button>
+          <button id="dup-btn-nuevo" style="background:none;border:1.5px solid #ddd;border-radius:8px;padding:10px 20px;font-family:Montserrat,sans-serif;font-size:12px;font-weight:600;color:#666;cursor:pointer;">
+            No, es un cliente nuevo
+          </button>
+        </div>
+      </div>
+    `;
+    document.body.appendChild(modal);
+  }
+
+  document.getElementById('dup-name').textContent = existingName;
+
+  // Botón: cambiar a existente y preseleccionar
+  document.getElementById('dup-btn-existente').onclick = () => {
+    closeDuplicateModal();
+    setClientType('existente');
+    // Esperar a que cargue la lista y preseleccionar
+    const waitAndSelect = setInterval(() => {
+      if (clientesLoaded) {
+        clearInterval(waitAndSelect);
+        selectClient(existingName);
+      }
+    }, 100);
+  };
+
+  // Botón: continuar como nuevo igual
+  document.getElementById('dup-btn-nuevo').onclick = () => {
+    closeDuplicateModal();
+  };
+
+  modal.style.display = 'flex';
+}
+
+function closeDuplicateModal() {
+  const modal = document.getElementById('duplicate-modal');
+  if (modal) modal.style.display = 'none';
 }
 
 function getCompanyName() {
@@ -601,6 +689,22 @@ function resetForm() {
   allClients = [];
   clientesLoaded = false;
   removeSelectedTag();
+  clearFuzzyHint();
+  closeDuplicateModal();
   setClientType('nuevo');
   showStep(1);
 }
+
+// Inicializar listener en company-name para detectar duplicados
+(function initDuplicateCheck() {
+  const input = document.getElementById('company-name');
+  if (input) {
+    input.addEventListener('blur', checkDuplicateClient);
+    // También al escribir con debounce de 800ms
+    let timer;
+    input.addEventListener('input', () => {
+      clearTimeout(timer);
+      timer = setTimeout(checkDuplicateClient, 800);
+    });
+  }
+})();
