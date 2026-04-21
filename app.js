@@ -697,6 +697,9 @@ function resetForm() {
 
 // Inicializar listener en company-name para detectar duplicados
 (function initDuplicateCheck() {
+  // Cargar clientes en background al inicio de la página
+  prefetchClients();
+
   const input = document.getElementById('company-name');
   if (input) {
     input.addEventListener('blur', checkDuplicateClient);
