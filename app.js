@@ -3,8 +3,10 @@
 // ============================================================
 
 const CONFIG = {
-  N8N_WEBHOOK_URL: 'https://n8n.openip.cl/webhook/fuerza-generator',
-  N8N_LIST_CLIENTS_URL: 'https://n8n.openip.cl/webhook/fuerza-list-clients',
+  // Cloudflare Worker URL — reemplaza TUUSUARIO tras el deploy
+  PROXY_URL: 'https://hidden-silence-a27f.cmanzano.workers.dev',
+  get N8N_WEBHOOK_URL() { return this.PROXY_URL + '/generate'; },
+  get N8N_LIST_CLIENTS_URL() { return this.PROXY_URL + '/clients'; },
   MAX_FILE_SIZE: 10 * 1024 * 1024,
 };
 
