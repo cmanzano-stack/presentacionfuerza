@@ -314,16 +314,13 @@ async function generatePresentation() {
     setGenStep(3, 'done');
 
     setGenStep(4, 'active');
-    const result = await response.json();
-    console.log('🔍 N8N RESPONSE:', JSON.stringify(result).substring(0, 300));
     setGenStep(4, 'done');
 
     setGenStep(5, 'active');
-    const slideUrl = result.presentationUrl || null;
-    const exportUrl = result.exportUrl || (slideUrl ? slideUrl.replace('/edit', '/export/pptx') : null);
     setGenStep(5, 'done');
 
-    setTimeout(() => showSuccess(slideUrl, exportUrl, getCompanyName()), 600);
+    // Fire-and-forget: n8n procesa en segundo plano y envía por email
+    setTimeout(() => showSuccessEmail(getCompanyName()), 600);
 
   } catch (err) {
     console.error(err);
@@ -423,6 +420,25 @@ function showSuccess(slideUrl, exportUrl, companyName) {
   const btnSlides = document.getElementById('btn-download');
   if (slideUrl) { btnSlides.href = slideUrl; btnSlides.target = '_blank'; btnSlides.style.display = 'inline-flex'; }
   else { btnSlides.style.display = 'none'; }
+  document.getElementById('success-state').classList.add('visible');
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+
+function showSuccessEmail(companyName) {
+  hideOverlay();
+  document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
+  for (let i = 1; i <= state.totalSteps; i++) {
+    const ind = document.getElementById('step-ind-' + i);
+    ind.classList.remove('active');
+    ind.classList.add('done');
+  }
+  document.getElementById('success-company').textContent = companyName;
+  // Ocultar botón de slides (llega por email)
+  const btnSlides = document.getElementById('btn-download');
+  btnSlides.style.display = 'none';
+  // Actualizar mensaje
+  const desc = document.querySelector('.success-desc');
+  if (desc) desc.innerHTML = 'El plan para <strong>' + companyName + '</strong> está siendo generado. Lo recibirás por correo en los próximos minutos con el link a Google Slides.';
   document.getElementById('success-state').classList.add('visible');
   window.scrollTo({ top: 0, behavior: 'smooth' });
 }
